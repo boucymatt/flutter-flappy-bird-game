@@ -21,24 +21,35 @@ class Bird extends SpriteGroupComponent<BirdMovement>
     final birdUpFlap = await gameRef.loadSprite(Assets.birdUpFlap);
     final birdDownFlap = await gameRef.loadSprite(Assets.birdDownFlap);
 
-    size = Vector2(
-      50,
-      40,
-    );
-    position = Vector2(
-      50,
-      gameRef.size.y / 2 - size.y / 2,
-    );
-    current = BirdMovement.middle;
+    // Print the details of each sprite to ensure they are loaded correctly
+    print("birdMidFlap: ${birdMidFlap.image.toString()}");
+    print("birdUpFlap: ${birdUpFlap.image.toString()}");
+    print("birdDownFlap: ${birdDownFlap.image.toString()}");
+
+    // Check if the sprites are not null
+    if (birdMidFlap.image == null || birdUpFlap.image == null || birdDownFlap.image == null) {
+      print("Error: One or more sprites failed to load.");
+      return;  // Return early if there's an issue with the sprites
+    }
+
+    // Set the size and position of the bird
+    size = Vector2(50, 40);
+    position = Vector2(50, gameRef.size.y / 2 - size.y / 2);
+
+    // Set the sprites map
     sprites = {
       BirdMovement.middle: birdMidFlap,
       BirdMovement.up: birdUpFlap,
       BirdMovement.down: birdDownFlap,
     };
 
-    // collision detection
+    // Set the current sprite
+    current = BirdMovement.middle;
+
+    // Add a collision hitbox
     add(CircleHitbox());
   }
+
 
   void fly() {
     add(
