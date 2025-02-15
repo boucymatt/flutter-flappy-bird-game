@@ -12,7 +12,6 @@ import 'package:flutter/painting.dart';
 class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
   late Bird bird;
   late TextComponent score;
-  late TextComponent highScore;
 
   Timer interval = Timer(Config.pipeInterval, repeat: true);
   bool isHit = false;
@@ -31,7 +30,6 @@ class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
     ]);
 
     score.priority = 10;
-    highScore.priority = 10;
 
     interval.onTick = () {
       PipeGroup pipeGroup = PipeGroup();  // Create new pipe group
@@ -107,6 +105,5 @@ class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
     interval.update(dt);
 
     score.text = 'Score: ${bird.score}';
-    highScore.text = 'High Score: ${bird.highScore}';
   }
 }
