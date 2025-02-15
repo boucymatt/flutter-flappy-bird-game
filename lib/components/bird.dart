@@ -97,7 +97,14 @@ class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCal
   }
   Future<void> saveScore(int score) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('score', score);  // 'score' is the key
+
+    // Get the previously saved score, default to 0 if not found
+    int previousScore = prefs.getInt('score') ?? 0;
+
+    // Only save the new score if it's higher than the previous score
+    if (score > previousScore) {
+      await prefs.setInt('score', score);  // Save the new high score
+    }
   }
 
   // Retrieve the score from SharedPreferences

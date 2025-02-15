@@ -3,14 +3,29 @@ import 'package:flappybirdgame/game/assets.dart';
 import 'package:flappybirdgame/game/flappy_bird_game.dart';
 import 'package:flutter/material.dart';
 
-class GameOverScreen extends StatelessWidget {
+class GameOverScreen extends StatefulWidget {
   final FlappyBirdGame game;
-  static const String id = 'gameOver';
 
-  const GameOverScreen({
-    super.key,
-    required this.game,
-  });
+  const GameOverScreen({super.key, required this.game});
+
+  @override
+  _GameOverScreenState createState() => _GameOverScreenState();
+}
+
+class _GameOverScreenState extends State<GameOverScreen> {
+  late int highScore;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHighScore();
+  }
+
+  Future<void> _loadHighScore() async {
+    // Fetch the high score from your ScoreManager or game
+    highScore = await widget.game.bird.getScore();  // Assuming getHighScore() is implemented correctly
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +36,7 @@ class GameOverScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'High Score: ${game.bird.highScore}',
+              'High Score: $highScore',
               style: const TextStyle(
                 fontSize: 60,
                 color: Colors.white,
@@ -29,7 +44,7 @@ class GameOverScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'Score: ${game.bird.score}',
+              'Score: ${widget.game.bird.score}',
               style: const TextStyle(
                 fontSize: 60,
                 color: Colors.white,
@@ -59,25 +74,14 @@ class GameOverScreen extends StatelessWidget {
   }
 
   void onRestart() {
-    game.bird.reset();
-    game.resetPipes();  // Reset the pipes so they don't interfere with the bird
-    game.bird.position = Vector2(50, game.size.y / 2 - game.bird.size.y / 2);  // Reset bird's position
+    widget.game.bird.reset();
+    widget.game.resetPipes();  // Reset the pipes so they don't interfere with the bird
+    widget.game.bird.position = Vector2(50, widget.game.size.y / 2 - widget.game.bird.size.y / 2);  // Reset bird's position
 
     Future.delayed(const Duration(milliseconds: 500), () {
-      game.resumeEngine();  // Start the game engine after a short delay
+      widget.game.resumeEngine();  // Start the game engine after a short delay
     });
 
-    game.overlays.remove('gameOver');  // Hide the Game Over screen
-  }
-
-
-  void resetGame() {
-    // Reset game state (bird, pipes, score)
-    game.resetGame(); // Call the method you defined in FlappyBirdGame
-  }
-
-  void resetTimers() {
-    // Reset any timers or periodic events
-    game.interval.start(); // Ensure the pipe generation timer is reset
+    widget.game.overlays.remove('gameOver');  // Hide the Game Over screen
   }
 }
