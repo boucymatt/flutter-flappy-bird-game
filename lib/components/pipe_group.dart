@@ -14,13 +14,12 @@ class PipeGroup extends PositionComponent with HasGameRef<FlappyBirdGame> {
   final _random = Random();
 
   // Define a fixed gap value between the pipes
-  final double fixedGap = 150.0; // Adjust this value to the gap you want
-  final double minPipeHeight = 50.0;  // Minimum height before the top pipe
-  final double maxPipeHeight = 300.0; // Maximum height for the top pipe
-  final double maxGap = 150.0;        // Max gap distance between top and bottom pipe
-  final double minGap = 100.0;        // Minimum gap distance to ensure the bird can fit
+  final double fixedGap = 120.0; // Adjust this value to keep the gap the same
+  // Define the minimum and maximum variation for the gap position
+  final double minGapVariation = 50.0;
+  final double maxGapVariation = 50.0;
 
-  double lastTopPipeHeight = 0.0; // Store the top pipe height from the previous pipe
+  double lastCenterY = 0.0;
 
   @override
   Future<void> onLoad() async {
@@ -29,42 +28,27 @@ class PipeGroup extends PositionComponent with HasGameRef<FlappyBirdGame> {
     // Get the height excluding the ground to prevent pipes from going past the floor
     final heightMinusGround = gameRef.size.y - Config.groundHeight;
 
-    double topPipeHeight;
-    double bottomPipeHeight;
-
-    // If lastTopPipeHeight is 0, set a random centerY, else adjust to ensure the gap is reasonable
-    if (lastTopPipeHeight == 0.0) {
-      topPipeHeight = _random.nextDouble() * (heightMinusGround - fixedGap);
+    // Randomize the centerY but ensure the new position is not too far from the previous gap
+    double centerY;
+    if (lastCenterY == 0.0) {
+      centerY = _random.nextDouble() * (heightMinusGround - fixedGap);
     } else {
-      // Calculate a top pipe height that ensures a reasonable gap for the bird
-      final safeGap = max(minGap, min(maxGap, fixedGap)); // Make sure the gap is between minGap and maxGap
-      topPipeHeight = _random.nextDouble() * (heightMinusGround - safeGap);
+      final minY = max(lastCenterY - maxGapVariation, 0.0);
+      final maxY = min(lastCenterY + maxGapVariation, heightMinusGround - fixedGap);
+      centerY = _random.nextDouble() * (maxY - minY) + minY;
     }
 
-    // Calculate the bottom pipe height based on the top pipe height and fixed gap
-    bottomPipeHeight = heightMinusGround - (topPipeHeight + fixedGap);
+    // Store the current centerY as the last position for the next pipe
+    lastCenterY = centerY;
 
-    // Ensure that the gap is navigable, adjust if it's too narrow or too wide
-    final gap = heightMinusGround - (topPipeHeight + bottomPipeHeight);
-    if (gap < minGap) {
-      // Increase topPipeHeight to widen the gap
-      topPipeHeight += (minGap - gap);
-    } else if (gap > maxGap) {
-      // Decrease topPipeHeight to shrink the gap
-      topPipeHeight -= (gap - maxGap);
-    }
-
-    // Update the lastTopPipeHeight for the next pipe
-    lastTopPipeHeight = topPipeHeight;
-
-    // Add the pipes (top and bottom) with the adjusted gap
+    // Add pipes with fixed gap
     addAll([
       Pipe(
-        height: topPipeHeight,
+        height: centerY,  // Top pipe height
         pipePosition: PipePosition.top,
       ),
       Pipe(
-        height: bottomPipeHeight,
+        height: heightMinusGround - (centerY + fixedGap),  // Bottom pipe height
         pipePosition: PipePosition.bottom,
       ),
     ]);
@@ -73,17 +57,15 @@ class PipeGroup extends PositionComponent with HasGameRef<FlappyBirdGame> {
   @override
   void update(double dt) {
     super.update(dt);
-
-    // Move the pipes to the left
     position.x -= Config.gameSpeed * dt;
 
-    // If the pipes move off the screen, remove them from the parent
+    // If the pipes move off the screen, remove them
     if (position.x < -10) {
       removeFromParent();
       updateScore();
     }
 
-    // If a collision with the bird is detected, remove the pipes
+    // If the bird collides with the pipes, remove them
     if (gameRef.isHit) {
       removeFromParent();
       gameRef.isHit = false;

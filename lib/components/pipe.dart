@@ -21,19 +21,21 @@ class Pipe extends SpriteComponent with HasGameRef<FlappyBirdGame> {
   @override
   Future<void> onLoad() async {
     final pipe = await Flame.images.load(Assets.pipe);
-    final pipeRotated = await Flame.images.load(Assets.pipeRotated);
 
     size = Vector2(
       50,
       height,
     );
-
     switch (pipePosition) {
       case PipePosition.top:
-        position.y = 0;
-        sprite = Sprite(pipeRotated);
+      // Set the anchor for the top pipe to the top-center
+        anchor = Anchor.bottomCenter;
+        position.y = 0; // Position the top pipe at the very top of the screen
+        sprite = Sprite(pipe);
+        angle = 3.14159; // Rotate by 180 degrees (in radians)
         break;
       case PipePosition.bottom:
+        anchor = Anchor.topCenter;
         position.y = gameRef.size.y - size.y - Config.groundHeight;
         sprite = Sprite(pipe);
         break;
