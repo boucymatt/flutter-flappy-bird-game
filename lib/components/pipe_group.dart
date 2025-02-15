@@ -17,9 +17,10 @@ class PipeGroup extends PositionComponent with HasGameRef<FlappyBirdGame> {
   final double fixedGap = 150.0; // Adjust this value to the gap you want
   final double minPipeHeight = 50.0;  // Minimum height before the top pipe
   final double maxPipeHeight = 300.0; // Maximum height for the top pipe
-  final double maxGap = 300.0;        // Max gap distance between top and bottom pipe
+  final double maxGap = 150.0;        // Max gap distance between top and bottom pipe
+  final double minGap = 100.0;        // Minimum gap distance to ensure the bird can fit
 
-  double lastGap = 0.0; // Store the gap from the previous pipe
+  double lastTopPipeHeight = 0.0; // Store the top pipe height from the previous pipe
 
   @override
   Future<void> onLoad() async {
@@ -28,24 +29,33 @@ class PipeGroup extends PositionComponent with HasGameRef<FlappyBirdGame> {
     // Get the height excluding the ground to prevent pipes from going past the floor
     final heightMinusGround = gameRef.size.y - Config.groundHeight;
 
-    // Prevent the next pipe's gap from being at the very top or bottom
     double topPipeHeight;
     double bottomPipeHeight;
 
-    // If last gap is 0, set a random centerY, else adjust to ensure the gap is reasonable
-    if (lastGap == 0.0) {
+    // If lastTopPipeHeight is 0, set a random centerY, else adjust to ensure the gap is reasonable
+    if (lastTopPipeHeight == 0.0) {
       topPipeHeight = _random.nextDouble() * (heightMinusGround - fixedGap);
     } else {
-      // Calculate a top pipe height that prevents the gap from being too small or too large
-      final range = minPipeHeight + (lastGap - fixedGap) * 0.5; // Ensure safe range
-      topPipeHeight = _random.nextDouble() * (heightMinusGround - range);
+      // Calculate a top pipe height that ensures a reasonable gap for the bird
+      final safeGap = max(minGap, min(maxGap, fixedGap)); // Make sure the gap is between minGap and maxGap
+      topPipeHeight = _random.nextDouble() * (heightMinusGround - safeGap);
     }
 
     // Calculate the bottom pipe height based on the top pipe height and fixed gap
     bottomPipeHeight = heightMinusGround - (topPipeHeight + fixedGap);
 
-    // Update the lastGap for the next pipe
-    lastGap = topPipeHeight;
+    // Ensure that the gap is navigable, adjust if it's too narrow or too wide
+    final gap = heightMinusGround - (topPipeHeight + bottomPipeHeight);
+    if (gap < minGap) {
+      // Increase topPipeHeight to widen the gap
+      topPipeHeight += (minGap - gap);
+    } else if (gap > maxGap) {
+      // Decrease topPipeHeight to shrink the gap
+      topPipeHeight -= (gap - maxGap);
+    }
+
+    // Update the lastTopPipeHeight for the next pipe
+    lastTopPipeHeight = topPipeHeight;
 
     // Add the pipes (top and bottom) with the adjusted gap
     addAll([

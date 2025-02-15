@@ -21,6 +21,14 @@ class GameOverScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
+              'High Score: ${game.bird.highScore}',
+              style: const TextStyle(
+                fontSize: 60,
+                color: Colors.white,
+                fontFamily: 'Game',
+              ),
+            ),
+            Text(
               'Score: ${game.bird.score}',
               style: const TextStyle(
                 fontSize: 60,

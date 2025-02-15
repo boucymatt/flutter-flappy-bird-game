@@ -6,6 +6,7 @@ import 'package:flappybirdgame/game/assets.dart';
 import 'package:flappybirdgame/game/configuration.dart';
 import 'package:flappybirdgame/game/flappy_bird_game.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'AudioPlayerManager.dart';
 
@@ -13,6 +14,7 @@ class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCal
   Bird();
 
   int score = 0;
+  int highScore = 0;
   final AudioPlayerManager _audioPlayerManager = AudioPlayerManager();
   double fallSpeed = 0; // Keep track of the bird's falling speed
 
@@ -21,7 +23,7 @@ class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCal
     sprite = await gameRef.loadSprite(Assets.bird);
     size = Vector2(50, 40);
     position = Vector2(50, gameRef.size.y / 2 - size.y / 2);
-
+    highScore = await getScore();
     // Set the pivot (anchor) to the center of the bird for smooth rotation
     anchor = Anchor.center;
 
@@ -76,6 +78,7 @@ class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCal
     gameRef.overlays.add('gameOver');
     gameRef.pauseEngine();
     game.isHit = true;
+    saveScore(score);
   }
 
   void reset() {
@@ -91,5 +94,15 @@ class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCal
     if (diff > 3.141592653589793) diff -= 2 * 3.141592653589793;
     if (diff < -3.141592653589793) diff += 2 * 3.141592653589793;
     return start + diff * t;
+  }
+  Future<void> saveScore(int score) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('score', score);  // 'score' is the key
+  }
+
+  // Retrieve the score from SharedPreferences
+  Future<int> getScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('score') ?? 0;  // Default value is 0 if not found
   }
 }
