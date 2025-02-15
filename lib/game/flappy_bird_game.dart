@@ -12,14 +12,15 @@ import 'package:flutter/painting.dart';
 class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
   late Bird bird;
   late TextComponent score;
-  Timer interval = Timer(
-    Config.pipeInterval,
-    repeat: true,
-  );
+  Timer interval = Timer(Config.pipeInterval, repeat: true);
   bool isHit = false;
+
+  // List to keep track of active pipe groups
+  List<PipeGroup> pipeGroups = [];
 
   @override
   Future<void> onLoad() async {
+    // Load all components here
     addAll([
       Background(),
       Ground(),
@@ -27,9 +28,25 @@ class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
       score = buildScore(),
     ]);
 
-    interval.onTick = () => add(PipeGroup());
+    interval.onTick = () {
+      PipeGroup pipeGroup = PipeGroup();  // Create new pipe group
+      pipeGroups.add(pipeGroup);  // Add it to the list of pipe groups
+      add(pipeGroup);  // Add the new pipe group to the game
+    };
   }
 
+  // Method to reset pipes when the game restarts
+  void resetPipes() {
+    // Clear the list of active pipe groups
+    pipeGroups.forEach((pipeGroup) {
+      pipeGroup.removeFromParent();  // Remove each pipe group from the game
+    });
+    pipeGroups.clear();  // Clear the list of pipe groups
+
+    // Optionally, you can spawn new pipes or reset pipe positions here
+  }
+
+  // Method to build and return the score text component
   TextComponent buildScore() {
     return TextComponent(
       text: 'Score: 0',
@@ -48,6 +65,32 @@ class FlappyBirdGame extends FlameGame with TapDetector, HasCollisionDetection {
     );
   }
 
+  // Reset the game state, including bird, score, and pipes
+  void resetGame() {
+    // Reset the bird's state and score
+    bird.reset();
+    bird.score = 0;
+
+    // Clear any previously added components like pipes or score
+    removeAllComponents();
+    pipeGroups.clear();
+    // Add all components back
+    addAll([
+      Background(),
+      Ground(),
+      bird = Bird(),
+      score = buildScore(),
+    ]);
+
+    // Reset the timer
+    interval.start();
+  }
+  void removeAllComponents() {
+    // Use `children` to access the list of all components and remove them
+    children.toList().forEach((component) {
+      component.removeFromParent();
+    });
+  }
   @override
   void onTap() {
     super.onTap();

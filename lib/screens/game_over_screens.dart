@@ -1,3 +1,4 @@
+import 'package:flame/components.dart';
 import 'package:flappybirdgame/game/assets.dart';
 import 'package:flappybirdgame/game/flappy_bird_game.dart';
 import 'package:flutter/material.dart';
@@ -51,7 +52,24 @@ class GameOverScreen extends StatelessWidget {
 
   void onRestart() {
     game.bird.reset();
-    game.overlays.remove('gameOver');
-    game.resumeEngine(); // ! SUGGESTION: instead of resuming, go back to the main menu
+    game.resetPipes();  // Reset the pipes so they don't interfere with the bird
+    game.bird.position = Vector2(50, game.size.y / 2 - game.bird.size.y / 2);  // Reset bird's position
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      game.resumeEngine();  // Start the game engine after a short delay
+    });
+
+    game.overlays.remove('gameOver');  // Hide the Game Over screen
+  }
+
+
+  void resetGame() {
+    // Reset game state (bird, pipes, score)
+    game.resetGame(); // Call the method you defined in FlappyBirdGame
+  }
+
+  void resetTimers() {
+    // Reset any timers or periodic events
+    game.interval.start(); // Ensure the pipe generation timer is reset
   }
 }

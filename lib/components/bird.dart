@@ -2,19 +2,20 @@ import 'dart:async';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flappybirdgame/game/assets.dart';
 import 'package:flappybirdgame/game/bird_movement.dart';
 import 'package:flappybirdgame/game/configuration.dart';
 import 'package:flappybirdgame/game/flappy_bird_game.dart';
 import 'package:flutter/material.dart';
 
+import 'AudioPlayerManager.dart';
+
 class Bird extends SpriteGroupComponent<BirdMovement>
     with HasGameRef<FlappyBirdGame>, CollisionCallbacks {
   Bird();
 
   int score = 0;
-
+  final AudioPlayerManager _audioPlayerManager = AudioPlayerManager();
   @override
   Future<void> onLoad() async {
     final birdMidFlap = await gameRef.loadSprite(Assets.birdMidFlap);
@@ -52,6 +53,7 @@ class Bird extends SpriteGroupComponent<BirdMovement>
 
 
   void fly() {
+    _audioPlayerManager.playFlap();
     add(
       MoveByEffect(
         Vector2(
@@ -66,7 +68,6 @@ class Bird extends SpriteGroupComponent<BirdMovement>
       ),
     );
     current = BirdMovement.up;
-    FlameAudio.play(Assets.flying);
   }
 
   @override
@@ -85,7 +86,7 @@ class Bird extends SpriteGroupComponent<BirdMovement>
   }
 
   void gameOver() {
-    FlameAudio.play(Assets.collision);
+    _audioPlayerManager.playCol();
     gameRef.overlays.add('gameOver');
     gameRef.pauseEngine();
     game.isHit = true;
