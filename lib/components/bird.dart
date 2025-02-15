@@ -3,86 +3,72 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flappybirdgame/game/assets.dart';
-import 'package:flappybirdgame/game/bird_movement.dart';
 import 'package:flappybirdgame/game/configuration.dart';
 import 'package:flappybirdgame/game/flappy_bird_game.dart';
 import 'package:flutter/material.dart';
 
 import 'AudioPlayerManager.dart';
 
-class Bird extends SpriteGroupComponent<BirdMovement>
-    with HasGameRef<FlappyBirdGame>, CollisionCallbacks {
+class Bird extends SpriteComponent with HasGameRef<FlappyBirdGame>, CollisionCallbacks {
   Bird();
 
   int score = 0;
   final AudioPlayerManager _audioPlayerManager = AudioPlayerManager();
+  double fallSpeed = 0; // Keep track of the bird's falling speed
+
   @override
   Future<void> onLoad() async {
-    final birdMidFlap = await gameRef.loadSprite(Assets.birdMidFlap);
-    final birdUpFlap = await gameRef.loadSprite(Assets.birdUpFlap);
-    final birdDownFlap = await gameRef.loadSprite(Assets.birdDownFlap);
-
-    // Print the details of each sprite to ensure they are loaded correctly
-    print("birdMidFlap: ${birdMidFlap.image.toString()}");
-    print("birdUpFlap: ${birdUpFlap.image.toString()}");
-    print("birdDownFlap: ${birdDownFlap.image.toString()}");
-
-    // Check if the sprites are not null
-    if (birdMidFlap.image == null || birdUpFlap.image == null || birdDownFlap.image == null) {
-      print("Error: One or more sprites failed to load.");
-      return;  // Return early if there's an issue with the sprites
-    }
-
-    // Set the size and position of the bird
+    sprite = await gameRef.loadSprite(Assets.bird);
     size = Vector2(50, 40);
     position = Vector2(50, gameRef.size.y / 2 - size.y / 2);
 
-    // Set the sprites map
-    sprites = {
-      BirdMovement.middle: birdMidFlap,
-      BirdMovement.up: birdUpFlap,
-      BirdMovement.down: birdDownFlap,
-    };
+    // Set the pivot (anchor) to the center of the bird for smooth rotation
+    anchor = Anchor.center;
 
-    // Set the current sprite
-    current = BirdMovement.middle;
-
-    // Add a collision hitbox
     add(CircleHitbox());
   }
 
-
   void fly() {
     _audioPlayerManager.playFlap();
+
+    fallSpeed = Config.birdVelocity * -1.3; // Upward movement based on Config
+
+    // Apply a slight rotation for the upward movement
     add(
-      MoveByEffect(
-        Vector2(
-          0,
-          Config.gravity,
-        ),
-        EffectController(
-          duration: 0.3,
-          curve: Curves.decelerate,
-        ),
-        onComplete: () => current = BirdMovement.down,
+      RotateEffect.by(
+        -0.3, // Slight upward tilt
+        EffectController(duration: 0.2, curve: Curves.easeOut),
       ),
     );
-    current = BirdMovement.up;
   }
 
   @override
-  void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
-    super.onCollisionStart(intersectionPoints, other);
-    gameOver();
+  void update(double dt) {
+    super.update(dt);
+
+    // Apply gravity from the Config class to fall faster over time
+    fallSpeed -= Config.gravity * 2 * dt; // Using gravity from Config to update fallSpeed
+    position.y += fallSpeed * dt; // Update the bird's position based on fallSpeed
+
+    // Apply rotation based on the current movement (falling or flying)
+    if (fallSpeed < 0) {
+      // Upward tilt while flying
+      angle = lerpAngle(angle, -0.3, 0.6); // Smooth upward tilt transition
+    } else if (fallSpeed > 150) {
+      // Downward tilt when falling
+      angle = lerpAngle(angle, 1.5, 0.2); // Smooth downward tilt transition
+    }
+
+    // Game over if the bird hits the ground
+    if (position.y < 1) {
+      gameOver();
+    }
   }
 
-  void reset() {
-    position = Vector2(
-      50,
-      gameRef.size.y / 2 - size.y / 2,
-    );
-    score = 0;
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    gameOver(); // Trigger game over on collision
   }
 
   void gameOver() {
@@ -92,12 +78,18 @@ class Bird extends SpriteGroupComponent<BirdMovement>
     game.isHit = true;
   }
 
-  @override
-  void update(double dt) {
-    super.update(dt);
-    position.y += Config.birdVelocity * dt;
-    if (position.y < 1) {
-      gameOver();
-    }
+  void reset() {
+    position = Vector2(50, gameRef.size.y / 2 - size.y / 2);
+    angle = 0; // Reset rotation
+    fallSpeed = 0; // Reset fall speed
+    score = 0; // Reset score
+  }
+
+  // Custom lerpAngle function to smoothly transition angles
+  double lerpAngle(double start, double end, double t) {
+    double diff = (end - start) % (2 * 3.141592653589793); // Ensure the shortest rotation
+    if (diff > 3.141592653589793) diff -= 2 * 3.141592653589793;
+    if (diff < -3.141592653589793) diff += 2 * 3.141592653589793;
+    return start + diff * t;
   }
 }
